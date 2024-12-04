@@ -44,6 +44,7 @@ import {
     PropertyOperator,
     RecordingUniversalFilters,
     RetentionPeriod,
+    UniversalFiltersGroupValue,
 } from '~/types'
 
 import type { webAnalyticsLogicType } from './webAnalyticsLogicType'
@@ -1277,7 +1278,7 @@ export const webAnalyticsLogic = kea<webAnalyticsLogicType>([
                               },
                           }
                         : null,
-                    !conversionGoal && featureFlags[FEATURE_FLAGS.WEB_ANALYTICS_REPLAY]
+                    featureFlags[FEATURE_FLAGS.WEB_ANALYTICS_REPLAY]
                         ? {
                               kind: 'replay',
                               tileId: TileId.REPLAY,
@@ -1425,12 +1426,22 @@ export const webAnalyticsLogic = kea<webAnalyticsLogicType>([
             },
         ],
         replayFilters: [
-            (s) => [s.webAnalyticsFilters, s.dateFilter, s.shouldFilterTestAccounts],
+            (s) => [s.webAnalyticsFilters, s.dateFilter, s.shouldFilterTestAccounts, s.conversionGoal],
             (
                 webAnalyticsFilters: WebAnalyticsPropertyFilters,
                 dateFilter,
-                shouldFilterTestAccounts
+                shouldFilterTestAccounts,
+                conversionGoal
             ): RecordingUniversalFilters => {
+                const filters: UniversalFiltersGroupValue[] = [...webAnalyticsFilters]
+                if (conversionGoal) {
+                    const actionId = (conversionGoal as ActionConversionGoal).actionId
+                    const customEventName = (conversionGoal as CustomEventConversionGoal).customEventName
+                    const id = actionId || customEventName
+
+                    filters.push({ id, name: String(id), type: customEventName ? 'events' : 'actions' })
+                }
+
                 return {
                     filter_test_accounts: shouldFilterTestAccounts,
 
@@ -1441,7 +1452,7 @@ export const webAnalyticsLogic = kea<webAnalyticsLogicType>([
                         values: [
                             {
                                 type: FilterLogicalOperator.And,
-                                values: webAnalyticsFilters || [],
+                                values: filters,
                             },
                         ],
                     },
