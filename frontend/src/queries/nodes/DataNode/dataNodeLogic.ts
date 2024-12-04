@@ -607,26 +607,33 @@ export const dataNodeLogic = kea<dataNodeLogicType>([
         getInsightRefreshButtonDisabledReason: [
             (s) => [s.nextAllowedRefresh, s.lastRefresh],
             (nextAllowedRefresh: string | null, lastRefresh: string | null) => (): string => {
-                const now = dayjs()
-                let disabledReason = ''
-                if (values.featureFlags[FEATURE_FLAGS.ALWAYS_ENABLE_INSIGHT_REFRESH_LINK]) {
-                    disabledReason = ''
-                } else if (!!nextAllowedRefresh && now.isBefore(dayjs(nextAllowedRefresh))) {
-                    // If this is a saved insight, the result will contain nextAllowedRefresh, and we use that to disable the button
-                    disabledReason = `You can refresh this insight again ${dayjs(nextAllowedRefresh).from(now)}`
-                } else if (
-                    !!lastRefresh &&
-                    now.subtract(UNSAVED_INSIGHT_MIN_REFRESH_INTERVAL_MINUTES - 0.5, 'minutes').isBefore(lastRefresh)
-                ) {
-                    // Unsaved insights don't get cached and get refreshed on every page load, but we avoid allowing users to click
-                    // 'refresh' more than once every UNSAVED_INSIGHT_MIN_REFRESH_INTERVAL_MINUTES. This can be bypassed by simply
-                    // refreshing the page though, as there's no cache layer on the backend
-                    disabledReason = `You can refresh this insight again ${dayjs(lastRefresh)
-                        .add(UNSAVED_INSIGHT_MIN_REFRESH_INTERVAL_MINUTES, 'minutes')
-                        .from(now)}`
+                // Always enabled if feature flag is on
+                if (values.featureFlags[FEATURE_FLAGS.BYPASS_INSIGHT_REFRESH_RATE_LIMIT]) {
+                    return ''
                 }
 
-                return disabledReason
+                const now = dayjs()
+
+                // For saved insights - check nextAllowedRefresh
+                if (nextAllowedRefresh) {
+                    const nextRefreshTime = dayjs(nextAllowedRefresh)
+                    if (now.isBefore(nextRefreshTime)) {
+                        return `You can refresh this insight again ${nextRefreshTime.from(now)}`
+                    }
+                }
+
+                // For unsaved insights - check minimum interval
+                if (lastRefresh) {
+                    const earliestRefresh = dayjs(lastRefresh).add(
+                        UNSAVED_INSIGHT_MIN_REFRESH_INTERVAL_MINUTES,
+                        'minutes'
+                    )
+                    if (now.isBefore(earliestRefresh)) {
+                        return `You can refresh this insight again ${earliestRefresh.from(now)}`
+                    }
+                }
+
+                return ''
             },
         ],
         timings: [
