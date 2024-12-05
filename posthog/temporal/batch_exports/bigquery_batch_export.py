@@ -539,7 +539,7 @@ async def insert_into_bigquery_activity(inputs: BigQueryInsertInputs) -> Records
                     delete=requires_merge,
                 ) as bigquery_stage_table,
             ):
-                records_completed = await run_consumer_loop(
+                await run_consumer_loop(
                     queue=queue,
                     consumer_cls=BigQueryConsumer,
                     producer_task=producer_task,
@@ -568,7 +568,7 @@ async def insert_into_bigquery_activity(inputs: BigQueryInsertInputs) -> Records
                         merge_key=merge_key,
                     )
 
-        return records_completed + details.records_completed
+        return details.records_completed
 
 
 @workflow.defn(name="bigquery-export", failure_exception_types=[workflow.NondeterminismError])
