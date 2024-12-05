@@ -609,7 +609,9 @@ export const webAnalyticsLogic = kea<webAnalyticsLogicType>([
                                 compare,
                             },
                             filterTestAccounts,
-                            conversionGoal,
+                            conversionGoal: featureFlags[FEATURE_FLAGS.WEB_ANALYTICS_CONVERSION_GOAL_FILTERS]
+                                ? conversionGoal
+                                : undefined,
                             properties: webAnalyticsFilters,
                         },
                         hidePersonsModal: true,
@@ -649,7 +651,9 @@ export const webAnalyticsLogic = kea<webAnalyticsLogicType>([
                                 sampling,
                                 limit: 10,
                                 filterTestAccounts,
-                                conversionGoal,
+                                conversionGoal: featureFlags[FEATURE_FLAGS.WEB_ANALYTICS_CONVERSION_GOAL_FILTERS]
+                                    ? conversionGoal
+                                    : undefined,
                                 ...(source || {}),
                             },
                             embedded: false,
@@ -850,7 +854,11 @@ export const webAnalyticsLogic = kea<webAnalyticsLogicType>([
                                                   sampling,
                                                   limit: 10,
                                                   filterTestAccounts,
-                                                  conversionGoal,
+                                                  conversionGoal: featureFlags[
+                                                      FEATURE_FLAGS.WEB_ANALYTICS_CONVERSION_GOAL_FILTERS
+                                                  ]
+                                                      ? conversionGoal
+                                                      : undefined,
                                                   stripQueryParams: shouldStripQueryParams,
                                               },
                                               embedded: false,
@@ -1125,7 +1133,11 @@ export const webAnalyticsLogic = kea<webAnalyticsLogicType>([
                                               trendsFilter: {
                                                   display: ChartDisplayType.WorldMap,
                                               },
-                                              conversionGoal,
+                                              conversionGoal: featureFlags[
+                                                  FEATURE_FLAGS.WEB_ANALYTICS_CONVERSION_GOAL_FILTERS
+                                              ]
+                                                  ? conversionGoal
+                                                  : undefined,
                                               filterTestAccounts,
                                               properties: webAnalyticsFilters,
                                           },
@@ -1426,15 +1438,16 @@ export const webAnalyticsLogic = kea<webAnalyticsLogicType>([
             },
         ],
         replayFilters: [
-            (s) => [s.webAnalyticsFilters, s.dateFilter, s.shouldFilterTestAccounts, s.conversionGoal],
+            (s) => [s.webAnalyticsFilters, s.dateFilter, s.shouldFilterTestAccounts, s.conversionGoal, s.featureFlags],
             (
                 webAnalyticsFilters: WebAnalyticsPropertyFilters,
                 dateFilter,
                 shouldFilterTestAccounts,
-                conversionGoal
+                conversionGoal,
+                featureFlags
             ): RecordingUniversalFilters => {
                 const filters: UniversalFiltersGroupValue[] = [...webAnalyticsFilters]
-                if (conversionGoal) {
+                if (conversionGoal && featureFlags[FEATURE_FLAGS.WEB_ANALYTICS_CONVERSION_GOAL_FILTERS]) {
                     if ('actionId' in conversionGoal) {
                         filters.push({
                             id: conversionGoal.actionId,
